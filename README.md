@@ -14,7 +14,7 @@
 ## 安装
 
 ```bash
-dsh plugin --profile desktop add github:<owner>/dsh-robot-ear
+dsh plugin --profile desktop add github:qiumingzhi2006-web/dsh-robot-ear
 ```
 
 装完重启 DSH（或者刷新 Web UI），侧栏会多出一个「机器人耳朵」。

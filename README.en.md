@@ -14,7 +14,7 @@ The audio track is pulled out with ffmpeg (m3u8 / mp4 / local files all work dir
 ## Install
 
 ```bash
-dsh plugin --profile desktop add github:<owner>/dsh-robot-ear
+dsh plugin --profile desktop add github:qiumingzhi2006-web/dsh-robot-ear
 ```
 
 Restart DSH (or refresh the web UI) and a "Robot Ear" item shows up in the sidebar.
