@@ -306,7 +306,7 @@ window.__ModuleLoader__.load({
     }
 
     const STYLES = [
-      '.rePage{display:flex;flex:1;flex-direction:column;min-height:0;max-height:100%;box-sizing:border-box;overflow-y:auto;scrollbar-gutter:stable;padding:20px clamp(16px,3vw,24px) 16px;gap:12px;font-size:13px}',
+      '.rePage{display:flex;flex:1;flex-direction:column;min-height:0;max-height:100vh;box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding:20px clamp(16px,3vw,24px) 16px;gap:12px;font-size:13px}',
       '.rePage > *{flex:0 0 auto}',
       '.rePage h2{margin:0;font-size:16px;font-weight:600}',
       '.reMuted{margin:0;opacity:.7;line-height:1.5}',
