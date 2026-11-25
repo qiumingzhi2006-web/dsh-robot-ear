@@ -27,6 +27,7 @@ const DEFAULTS = {
   maxSeconds: 900,
   keepWav: false,
   simplify: true,
+  squeezeRepeats: true,
   openai: { baseUrl: '', apiKey: '', model: 'FunAudioLLM/SenseVoiceSmall' },
   local: { model: 'onnx-community/whisper-base', mirror: 'https://hf-mirror.com' },
 }
@@ -96,7 +97,7 @@ async function extractWav(cfg, src, ffmpeg) {
   const wav = path.join(CACHE_DIR, cacheName(src))
   const isRemote = /^https?:\/\//i.test(src)
   // 抖音的播放直链会校验来源，没带 Referer 一律 403；别让用户自己配这个
-  const referer = cfg.headerReferer || (/douyinvod|douyin\.com/i.test(src) ? 'https://www.douyin.com/' : '')
+  const referer = cfg.headerReferer || (/douyin|douyinvod|zjcdn|amemv|snssdk|byteimg|ibytedtos/i.test(src) ? 'https://www.douyin.com/' : '')
   const args = ['-y', '-hide_banner', '-loglevel', 'error']
   if (isRemote && referer) {
     args.push('-headers', `Referer: ${referer}\r\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36\r\n`)
@@ -147,6 +148,25 @@ async function toSimplified(text) {
   } catch {
     return text
   }
+}
+
+/**
+ * whisper 遇到长音轨容易陷进「我的心里我的心里我的心里」这种循环重复；
+ * 把「同一小段连续重复 ≥2 次」折叠成一次，只影响读感、不影响信息量。
+ */
+function squeezeRepeats(text) {
+  if (!text) return text
+  let out = text
+  for (let round = 0; round < 8; round++) {
+    let changed = false
+    for (let len = 2; len <= 32; len++) {
+      const unit = `[\\u4e00-\\u9fa5A-Za-z0-9，。、！？,.!?]{${len}}`
+      const re = new RegExp(`(${unit})(?:\\1)+`, 'g')
+      out = out.replace(re, (_m, g1) => { changed = true; return g1 })
+    }
+    if (!changed) break
+  }
+  return out
 }
 
 const TRANSFORMER_LIBS = ['@huggingface/transformers', '@xenova/transformers']
@@ -279,6 +299,9 @@ async function doRun(src) {
   if (r.ok && r.text && cfg.simplify !== false && /[\u4e00-\u9fa5]/.test(r.text)) {
     r.text = await toSimplified(r.text)
   }
+  if (r.ok && r.text && cfg.squeezeRepeats !== false) {
+    r.text = squeezeRepeats(r.text)
+  }
   emit({
     ok: r.ok,
     text: r.text || '',
@@ -307,11 +330,15 @@ async function doHealth() {
   }
   const modelDir = path.join(HOME_DIR, 'models')
   let modelFiles = 0
-  try {
-    for (const d of fs.readdirSync(modelDir)) {
-      try { modelFiles += fs.readdirSync(path.join(modelDir, d)).length } catch { /* 跳过 */ }
+  const walk = (dir) => {
+    let n = 0
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (e.isDirectory()) n += walk(path.join(dir, e.name))
+      else n += 1
     }
-  } catch { /* 还没下过模型 */ }
+    return n
+  }
+  try { modelFiles = walk(modelDir) } catch { modelFiles = 0 }
   emit({
     ok: r.ok,
     ffmpeg,
