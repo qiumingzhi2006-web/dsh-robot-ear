@@ -1,0 +1,9 @@
+# Bundle patch for dsh-robot-ear（机器人耳朵）.
+#
+# 让这个包成为 profile 的一层而不是一个「装了但什么都不做」的依赖：
+# dsh 会把 dsh.profile.bundles 里声明了 dsh.bundle.patch 的包挂进 layer stack，
+# 下面这行 insert 负责真正挂载插件。
+# 注意：name 必须是真实包名（cordis 按 name import 包），改包名时这里要同步。
+- insert:
+    - id: dsh-robot-ear
+      name: dsh-robot-ear
